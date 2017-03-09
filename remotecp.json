@@ -1,0 +1,13 @@
+{
+    
+    "host": "35.164.89.194",
+    "port": 22,
+    "user": "ubuntu",
+    "_remote_path": "/home/ubuntu/go/src/github.com/rem7/servercontrol",
+    "remote_path": "/home/ubuntu/go/src/github.com/rem7/webapp/vendor/github.com/rem7/servercontrol",
+    "ignore_regexes": [
+        "\\.sublime-(project|workspace)", "sftp-config(-alt\\d?)?\\.json",
+        "sftp-settings\\.json", "/venv/", "\\.svn/", "\\.hg/", "\\.git/",
+        "\\.bzr", "_darcs", "CVS", "\\.DS_Store", "Thumbs\\.db", "desktop\\.ini"
+    ]
+}
