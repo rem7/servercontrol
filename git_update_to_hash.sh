@@ -47,6 +47,7 @@ if [ "$?" -ne 0 ]; then
     exit 1
 else
 
+    export GOPATH=$GOPATH
     /var/go/src/go/bin/dep ensure
 
     # forget about deps for now and checkin vendor
