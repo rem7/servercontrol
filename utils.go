@@ -486,13 +486,15 @@ func runCommand(logPostFix string, app string, args ...string) error {
 		log.Fatal(err.Error())
 	}
 
-	err = cmd.Wait()
-	if err != nil {
-		log.Fatal(err.Error())
+	if err = cmd.Wait(); err != nil {
+		if exiterr, ok := err.(*exec.ExitError); ok {
+			log.Printf("exit status != 0: %s", exiterr)
+			return errors.New("cmd terminated with non-zero")
+		}
 	}
 
 	if !cmd.ProcessState.Success() {
-		log.Printf("exit statuc != 0")
+		log.Printf("exit status != 0")
 		return errors.New("cmd terminated with non-zero")
 	}
 
