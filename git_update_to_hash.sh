@@ -1,5 +1,7 @@
 #!/bin/bash
  
+source <( curl "http://169.254.169.254/latest/user-data" 2>/dev/null )
+
 if [ "$#" -lt 1 ]; then
     echo "Usage: $git_hash <app_name> <git_hash> [revert_hash]"
     exit 1
@@ -43,7 +45,9 @@ if [ "$?" -ne 0 ]; then
         echo " - Revert Success."
     fi
     exit 1
-# else
+else
+
+    /var/go/src/go/bin/dep ensure
 
     # forget about deps for now and checkin vendor
     # $GOPATH/bin/glide install
