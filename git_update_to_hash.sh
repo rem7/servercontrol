@@ -56,12 +56,13 @@ else
     # # this should allow glide.lock if the repo has it commited
     # rm glide.lock
 
-    echo ". building "
-    /usr/local/go/bin/go build -v -ldflags "-X main.gitHash=`git rev-parse HEAD`" -o /tmp/$build_name
-    if [ "$?" -ne 0 ]; then 
-        echo " - Compiling failed."
-        exit 4
-    fi
+    # forget about building. run main.go
+    # echo ". building "
+    # /usr/local/go/bin/go build -v -ldflags "-X main.gitHash=`git rev-parse HEAD`" -o /tmp/$build_name
+    # if [ "$?" -ne 0 ]; then 
+    #     echo " - Compiling failed."
+    #     exit 4
+    # fi
 fi
 
 exit 0
