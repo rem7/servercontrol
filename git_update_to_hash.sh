@@ -43,7 +43,7 @@ if [ "$?" -ne 0 ]; then
         echo " - Revert Success."
     fi
     exit 1
-else
+# else
 
     # forget about deps for now and checkin vendor
     # $GOPATH/bin/glide install
