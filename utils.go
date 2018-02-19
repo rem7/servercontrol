@@ -358,8 +358,8 @@ func updateAutoscaleGroup(newHash, asgName, launchConfigName string) error {
 			break
 		}
 
-		if strings.Contains(string(line), "GIT_HASH") {
-			newHashLine := fmt.Sprintf("GIT_HASH=%s\n", newHash)
+		if strings.Contains(string(line), "GO_GIT_HASH") {
+			newHashLine := fmt.Sprintf("GO_GIT_HASH=%s\n", newHash)
 			newUserData.WriteString(newHashLine)
 		} else {
 			newUserData.Write(line)
