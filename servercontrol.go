@@ -150,6 +150,7 @@ func serverVersion(res http.ResponseWriter, req *http.Request) {
 		fmt.Fprintf(res, j)
 	} else {
 		res.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(res, "%s", err.Error())
 	}
 }
 
@@ -190,6 +191,7 @@ func serviceData(res http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		log.Printf(err.Error())
 		res.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(res, "%s", err.Error())
 		return
 	}
 
@@ -206,6 +208,7 @@ func updateService(res http.ResponseWriter, req *http.Request) {
 
 	props, err := parseDefaultProps(req, res)
 	if err != nil {
+		fmt.Fprintf(res, "%s", err.Error())
 		return
 	}
 
@@ -217,6 +220,7 @@ func updateService(res http.ResponseWriter, req *http.Request) {
 	data, err := getServiceData()
 	if err != nil {
 		res.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(res, "%s", err.Error())
 		return
 	}
 
@@ -248,6 +252,7 @@ func updateService(res http.ResponseWriter, req *http.Request) {
 
 	if finishedWithErrors {
 		res.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(res, "finished with errors")
 		return
 	}
 
