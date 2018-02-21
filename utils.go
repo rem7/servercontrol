@@ -37,7 +37,7 @@ var (
 	gInstanceId string
 	gUserData   string
 
-	lcRegex = regexp.MustCompile(`(.*)(\d+)`)
+	lcRegex = regexp.MustCompile(`(.*)-(\d+)`)
 )
 
 type Instance struct {
@@ -378,7 +378,7 @@ func updateAutoscaleGroup(newHash, asgName, launchConfigName string) error {
 		if err != nil {
 			lcNewName = launchConfigName + "-1"
 		} else {
-			lcNewName = fmt.Sprintf("%s%d", prefix, iter+1)
+			lcNewName = fmt.Sprintf("%s-%d", prefix, iter+1)
 		}
 
 	} else {
