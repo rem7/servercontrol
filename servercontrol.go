@@ -2,6 +2,7 @@ package servercontrol
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -30,6 +31,7 @@ type ServerControlConfig struct {
 	Version      string
 	Proto        string
 	Timeout      int
+	ShutdownFunc context.CancelFunc
 }
 
 type ServerVersion struct {
@@ -43,6 +45,7 @@ var (
 	startupuptime = "not-set"
 	sv            ServerVersion
 	gConfig       ServerControlConfig
+	shutdownFunc  context.CancelFunc
 )
 
 func init() {
@@ -107,6 +110,8 @@ func NewServerControl(config ServerControlConfig) http.Handler {
 	n.Use(negroni.HandlerFunc(auth(config)))
 
 	n.UseHandler(router)
+
+	shutdownFunc = config.ShutdownFunc
 
 	return n
 }
@@ -177,7 +182,8 @@ func updateServer(res http.ResponseWriter, req *http.Request) {
 		fmt.Fprint(res, "restarting server")
 		log.Printf("pull succesfull restarting server")
 		time.AfterFunc(time.Millisecond*100, func() {
-			os.Exit(0)
+			// os.Exit(0)
+			shutdownFunc()
 		})
 	}
 
@@ -287,7 +293,8 @@ func updateService(res http.ResponseWriter, req *http.Request) {
 	res.WriteHeader(http.StatusOK)
 	fmt.Fprint(res, "Successful updating all servers, restarting this server.")
 	time.AfterFunc(time.Millisecond*50, func() {
-		os.Exit(0)
+		// os.Exit(0)
+		shutdownFunc()
 	})
 
 }
@@ -315,7 +322,8 @@ func restartServer(res http.ResponseWriter, req *http.Request) {
 	}
 
 	time.AfterFunc(time.Millisecond*100, func() {
-		os.Exit(0)
+		// os.Exit(0)
+		shutdownFunc()
 	})
 
 	fmt.Fprintf(res, "restarted server %s with git_hash %s", gInstanceId, props.Hash)
