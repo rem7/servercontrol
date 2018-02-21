@@ -131,7 +131,7 @@ func primeBuild(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	err = internalUpdateServer(props.Hash)
+	err = internalUpdateServer(props.Hash, GitHash)
 	if err != nil {
 		res.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(res, "pull/compiled failed")
@@ -154,8 +154,8 @@ func serverVersion(res http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func internalUpdateServer(hash string) error {
-	return runCommand(hash, gConfig.UpdateScript, gConfig.AppName, hash)
+func internalUpdateServer(hash, revertHash string) error {
+	return runCommand(hash, gConfig.UpdateScript, gConfig.AppName, hash, revertHash)
 }
 
 func updateServer(res http.ResponseWriter, req *http.Request) {
@@ -169,7 +169,7 @@ func updateServer(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	err = internalUpdateServer(props.Hash)
+	err = internalUpdateServer(props.Hash, GitHash)
 	if err != nil {
 		res.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(res, "pull failed")

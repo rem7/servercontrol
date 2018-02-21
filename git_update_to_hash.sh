@@ -36,7 +36,7 @@ git checkout -q $git_hash
 if [ "$?" -ne 0 ]; then
     echo " - Checkout failed."
     if [ "$2" != "" ]; then
-        echo "Reverting to git_hash revert_hash."
+        echo "Reverting to git_hash $revert_hash."
         git checkout -q $revert_hash
         if [ "$?" -ne 0 ]; then
             echo " - Revert failed!"
@@ -54,6 +54,13 @@ else
     /usr/local/go/bin/go build -v -ldflags "-X main.gitHash=`git rev-parse HEAD`" -o /tmp/$build_name
     if [ "$?" -ne 0 ]; then 
         echo " - Compiling failed."
+        echo "Reverting to git_hash $revert_hash."
+        git checkout -q $revert_hash
+        if [ "$?" -ne 0 ]; then
+            echo " - Revert failed!"
+            exit 2
+        fi
+        echo " - Revert Success."
         exit 4
     fi
 fi
