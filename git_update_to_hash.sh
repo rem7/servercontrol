@@ -25,8 +25,10 @@ if [ "$?" -ne 0 ]; then
     exit 1
 fi
  
-echo "Pulling latest."
-git pull
+echo "Pulling latest. -- forced"
+git fetch origin master
+git reset --hard FETCH_HEAD
+git clean -df
 if [ "$?" -ne 0 ]; then
     echo " - Pull failed."
     exit 1
