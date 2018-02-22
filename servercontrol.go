@@ -1,4 +1,4 @@
-package servercontrol
+package servercontrol // import "github.com/rem7/servercontrol"
 
 import (
 	"bytes"
@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -20,6 +19,11 @@ import (
 	"github.com/urfave/negroni"
 )
 
+type Logger interface {
+	Printf(string, ...interface{})
+	Fatalf(string, ...interface{})
+}
+
 type ServerControlConfig struct {
 	AppName      string
 	RepoUrl      string
@@ -32,6 +36,7 @@ type ServerControlConfig struct {
 	Proto        string
 	Timeout      int
 	ShutdownFunc context.CancelFunc
+	Log          Logger
 }
 
 type ServerVersion struct {
@@ -46,10 +51,17 @@ var (
 	sv            ServerVersion
 	gConfig       ServerControlConfig
 	shutdownFunc  context.CancelFunc
+	logger        Logger
+	DEBUG         bool
 )
 
 func init() {
 	getInstanceData()
+	if d := os.Getenv("DEBUG"); d == "" {
+		DEBUG = false
+	} else {
+		DEBUG = true
+	}
 }
 
 func NewServerControl(config ServerControlConfig) http.Handler {
@@ -67,7 +79,7 @@ func NewServerControl(config ServerControlConfig) http.Handler {
 	}
 
 	if config.RepoDir == "" {
-		log.Fatal("config dir not setup")
+		fatalf("config dir not setup")
 	}
 
 	if config.UpdateScript == "" {
@@ -92,6 +104,10 @@ func NewServerControl(config ServerControlConfig) http.Handler {
 
 	if config.Timeout == 0 {
 		config.Timeout = 60
+	}
+
+	if config.Log != nil {
+		logger = config.Log
 	}
 
 	gConfig = config
@@ -132,7 +148,7 @@ func primeBuild(res http.ResponseWriter, req *http.Request) {
 
 	if _, err := os.Stat("/tmp/" + gConfig.AppName + "-" + props.Hash); err == nil {
 		fmt.Fprintf(res, "binary for hash %s already exists skipping compile")
-		log.Printf("build succesfull")
+		printf("build succesfull")
 		return
 	}
 
@@ -142,7 +158,7 @@ func primeBuild(res http.ResponseWriter, req *http.Request) {
 		fmt.Fprint(res, "pull/compiled failed")
 	} else {
 		fmt.Fprint(res, "build succesfull")
-		log.Printf("build succesfull")
+		printf("build succesfull")
 	}
 
 }
@@ -180,7 +196,7 @@ func updateServer(res http.ResponseWriter, req *http.Request) {
 		fmt.Fprint(res, "pull failed")
 	} else {
 		fmt.Fprint(res, "restarting server")
-		log.Printf("pull succesfull restarting server")
+		printf("pull succesfull restarting server")
 		time.AfterFunc(time.Millisecond*100, func() {
 			// os.Exit(0)
 			shutdownFunc()
@@ -195,7 +211,7 @@ func serviceData(res http.ResponseWriter, req *http.Request) {
 
 	data, err := getServiceData()
 	if err != nil {
-		log.Printf(err.Error())
+		printf(err.Error())
 		res.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(res, "%s", err.Error())
 		return
@@ -249,10 +265,10 @@ func updateService(res http.ResponseWriter, req *http.Request) {
 		job := <-done
 		if job.Err != nil {
 			finishedWithErrors = true
-			log.Printf("instance %s failed to pull/compiles", job.Instance.InstanceID)
+			printf("instance %s failed to pull/compiles", job.Instance.InstanceID)
 			fmt.Fprintf(res, "instance %s failed to pull/compiles", job.Instance.InstanceID)
 		} else {
-			log.Printf("instance %s completed build", job.Instance.InstanceID)
+			printf("instance %s completed build", job.Instance.InstanceID)
 		}
 	}
 
@@ -267,7 +283,7 @@ func updateService(res http.ResponseWriter, req *http.Request) {
 		if instance.InstanceID != gInstanceId {
 			err := restartServerRequest(props.Hash, instance)
 			if err != nil {
-				log.Printf("%v", err)
+				printf("%v", err)
 				fmt.Fprintf(res, "failed restarting server\n%s", err.Error())
 				return
 			}
@@ -279,13 +295,13 @@ func updateService(res http.ResponseWriter, req *http.Request) {
 		msg := "unable to install version on this server"
 		res.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(res, "%s\n%s", msg, err.Error())
-		log.Printf(msg)
+		printf(msg)
 		return
 	}
 
 	err = updateAutoscaleGroup(props.Hash, data.AutoScaleGroup.Name, data.AutoScaleGroup.LaunchConfiguration.Name)
 	if err != nil {
-		log.Printf("%v", err)
+		printf("%v", err)
 		fmt.Fprintf(res, "failed updating asg/lc\n%s", err.Error())
 		return
 	}
@@ -315,7 +331,7 @@ func restartServer(res http.ResponseWriter, req *http.Request) {
 
 	err = installVersion(props.Hash)
 	if err != nil {
-		log.Printf(err.Error())
+		printf(err.Error())
 		res.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(res, "restarted server %s with git_hash %s", gInstanceId, props.Hash)
 		return
@@ -364,7 +380,7 @@ func waitForInstance(hash string, instance Instance) error {
 	url := getServiceForInstance(instance, "server_version")
 	for i := 0; i < gConfig.Timeout; i++ {
 
-		log.Printf("waiting for %s (%s)", instance.InstanceID, instance.PrivateIP)
+		printf("waiting for %s (%s)", instance.InstanceID, instance.PrivateIP)
 		time.Sleep(1 * time.Second)
 
 		resp, err := apiRequest(url, "GET", nil)
@@ -376,12 +392,12 @@ func waitForInstance(hash string, instance Instance) error {
 		body := ServerVersion{}
 		err = json.NewDecoder(resp.Body).Decode(&body)
 		if err != nil || resp.StatusCode != 200 {
-			log.Printf("Sleeping 2 code: %v\n%v", resp.StatusCode, err)
+			printf("Sleeping 2 code: %v\n%v", resp.StatusCode, err)
 			continue
 		}
 
 		if body.GitCommitHash == hash {
-			log.Printf("updated %s (%s) with %s", instance.InstanceID, instance.PrivateIP, hash)
+			printf("updated %s (%s) with %s", instance.InstanceID, instance.PrivateIP, hash)
 			return nil
 		}
 	}
@@ -392,7 +408,7 @@ func waitForInstance(hash string, instance Instance) error {
 
 func primeBuildInstance(hash string, instance Instance) error {
 
-	log.Printf("Updating instance: %s with %s", instance.InstanceID, hash)
+	printf("Updating instance: %s with %s", instance.InstanceID, hash)
 
 	url := getServiceForInstance(instance, "prime_build")
 	props := defaultProps{

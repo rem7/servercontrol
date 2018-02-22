@@ -235,7 +235,7 @@ func getServiceData() (*ServiceData, error) {
 
 	userDataDecoded, err := base64.StdEncoding.DecodeString(*launchConfig.UserData)
 	if err != nil {
-		log.Printf("unable to decode user data")
+		printf("unable to decode user data")
 		return nil, err
 	}
 
@@ -285,7 +285,7 @@ func getRegion() string {
 
 	region, err := ec2Meta.Region()
 	if err != nil {
-		log.Printf("failed to get region")
+		printf("failed to get region")
 	}
 
 	return region
@@ -295,7 +295,7 @@ func getUserData() string {
 
 	userData, err := ec2Meta.GetUserData()
 	if err != nil {
-		log.Printf("failed to get user data from instance")
+		printf("failed to get user data from instance")
 		return ""
 	}
 	return userData
@@ -343,7 +343,7 @@ func updateAutoscaleGroup(newHash, asgName, launchConfigName string) error {
 
 	decoded, err := base64.StdEncoding.DecodeString(*launchConfig.UserData)
 	if err != nil {
-		log.Printf("unable to decode")
+		printf("unable to decode")
 		return err
 	}
 
@@ -354,7 +354,7 @@ func updateAutoscaleGroup(newHash, asgName, launchConfigName string) error {
 		if err == io.EOF {
 			break
 		} else if err != nil {
-			log.Print("error reading userData")
+			print("error reading userData")
 			break
 		}
 
@@ -444,13 +444,13 @@ func printPipes(logPostFix string, stdout, stderr io.Reader) {
 
 	stdoutFile, err := os.Create(stdoutpath)
 	if err != nil {
-		log.Printf("unable to open tmp file for output")
+		printf("unable to open tmp file for output")
 		return
 	}
 
 	stderrFile, err := os.Create(stderrpath)
 	if err != nil {
-		log.Printf("unable to open tmp file for output")
+		printf("unable to open tmp file for output")
 		return
 	}
 
@@ -483,20 +483,36 @@ func runCommand(logPostFix string, app string, args ...string) error {
 
 	err := cmd.Start()
 	if err != nil {
-		log.Fatal(err.Error())
+		fatalf(err.Error())
 	}
 
 	if err = cmd.Wait(); err != nil {
 		if exiterr, ok := err.(*exec.ExitError); ok {
-			log.Printf("exit status != 0: %s", exiterr)
+			printf("exit status != 0: %s", exiterr)
 			return errors.New("cmd terminated with non-zero")
 		}
 	}
 
 	if !cmd.ProcessState.Success() {
-		log.Printf("exit status != 0")
+		printf("exit status != 0")
 		return errors.New("cmd terminated with non-zero")
 	}
 
 	return nil
+}
+
+func printf(format string, args ...interface{}) {
+	if logger != nil {
+		logger.Printf(format, args...)
+	} else if DEBUG {
+		log.Printf(format, args...)
+	}
+}
+
+func fatalf(format string, args ...interface{}) {
+	if logger != nil {
+		logger.Fatalf(format, args...)
+	} else if DEBUG {
+		log.Fatalf(format, args...)
+	}
 }
