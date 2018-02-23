@@ -49,11 +49,8 @@ if [ "$?" -ne 0 ]; then
     exit 1
 else
 
-    export GOPATH=$GOPATH
-    /var/go/src/go/bin/dep ensure
-    
     echo ". building "
-    /usr/local/go/bin/go build -v -ldflags "-X main.gitHash=`git rev-parse HEAD`" -o /tmp/$build_name
+    /var/go/src/go/bin/vgo build -v -ldflags "-X main.gitHash=`git rev-parse HEAD`" -o /tmp/$build_name
     if [ "$?" -ne 0 ]; then 
         echo " - Compiling failed."
         echo "Reverting to git_hash $revert_hash."
